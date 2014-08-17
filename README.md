@@ -1,5 +1,7 @@
 # colors-clustering-visualization
 
+http://zenozeng.github.io/colors-clustering-visualization/
+
 Visualization demo for Colors Clustering using RGB &amp; K-means algorithm
 
 This is a demo & intro for https://github.com/zenozeng/colors-clustering.
@@ -8,7 +10,7 @@ This demo was based on mbostock's Multi-Foci Force Layout.
 
 http://bl.ocks.org/mbostock/1021953
 
-Note for production usage:
+## Note for production usage:
 
 - You should CIE76 or CIE2000 for color difference
 
