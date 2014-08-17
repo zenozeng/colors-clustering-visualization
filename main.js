@@ -31,27 +31,30 @@ var distance = function(a, b) {
 
 var drawClusters = function(colors) {
 
-    console.log(colors);
-
-    var width = 900,
-        height = 500,
-        padding = 2, // padding for circles in same cluster
-        clusterPadding = 40, // padding for circles in different cluster
+    var width = 960,
+        height = 480,
         radius = 5,
-        clusterRadius = 20;
+        clusterRadius = 15;
 
     var svg = d3.select("body").append("svg")
             .attr("width", width)
             .attr("height", height);
 
-    var n = 5; // 10 clusters
+    var pd = 0.4;
+    var focusPoints = [
+        {x: width * pd, y: height * pd},
+        {x: width * pd, y: height * (1 - pd)},
+        {x: width * (1 - pd), y: height * pd},
+        {x: width * (1 - pd), y: height * (1 - pd)},
+    ]
+
+    var n = 4; // 10 clusters
     var clusters = new Array(n); // center for each cluster
     var clusterColors = [
-        [193, 196, 178],
+        [255, 196, 178],
         [56, 63, 11],
         [204, 160, 168],
-        [111, 125, 16],
-        [39, 39, 31]
+        [111, 125, 16]
     ];
 
     var nodes = colors.map(function(rgb, index) {
@@ -66,7 +69,6 @@ var drawClusters = function(colors) {
         });
         var d = {cluster: i, radius: radius, color: "rgba("+rgb.join(',')+",1)", rgb: rgb};
         if(minD < 270 && !clusters[i]) {
-            console.log(d);
             d.radius = clusterRadius;
             clusters[i] = d;
         }
@@ -75,11 +77,11 @@ var drawClusters = function(colors) {
 
     var force = d3.layout.force()
             .nodes(nodes)
+            .links([])
+            .gravity(0)
+            .charge(-10)
             .size([width, height])
-            .gravity(.02)
-            .charge(0)
-            .on("tick", tick)
-            .start();
+            .on("tick", tick);
 
     var circle = svg.selectAll("circle")
             .data(nodes)
@@ -89,59 +91,24 @@ var drawClusters = function(colors) {
             .call(force.drag);
 
     function tick(e) {
-        circle
-            .each(cluster(10 * e.alpha * e.alpha))
-            .each(collide(.5))
-            .attr("cx", function(d) { return d.x; })
+        var k = .1 * e.alpha;
+
+        nodes.forEach(function(d, i) {
+            var dy = (focusPoints[d.cluster].y - d.y) * k,
+                dx = (focusPoints[d.cluster].x - d.x) * k;
+            if(clusters[d.cluster] == d) {
+                dy *= 1.5;
+                dx *= 1.5;
+            }
+            d.x += dx;
+            d.y += dy;
+        });
+
+        circle.attr("cx", function(d) { return d.x; })
             .attr("cy", function(d) { return d.y; });
     }
 
-    // Move d to be adjacent to the cluster node.
-    function cluster(alpha) {
-        return function(d) {
-            var cluster = clusters[d.cluster];
-            if (cluster === d) return;
-            var x = d.x - cluster.x,
-                y = d.y - cluster.y,
-                l = Math.sqrt(x * x + y * y),
-                r = d.radius + cluster.radius;
-            if (l != r) {
-                l = (l - r) / l * alpha;
-                d.x -= x *= l;
-                d.y -= y *= l;
-                cluster.x += x;
-                cluster.y += y;
-            }
-        };
-    }
-
-    // Resolves collisions between d and all other circles.
-    function collide(alpha) {
-        var quadtree = d3.geom.quadtree(nodes);
-        return function(d) {
-            var r = d.radius + clusterRadius + Math.max(padding, clusterPadding),
-                nx1 = d.x - r,
-                nx2 = d.x + r,
-                ny1 = d.y - r,
-                ny2 = d.y + r;
-            quadtree.visit(function(quad, x1, y1, x2, y2) {
-                if (quad.point && (quad.point !== d)) {
-                    var x = d.x - quad.point.x,
-                        y = d.y - quad.point.y,
-                        l = Math.sqrt(x * x + y * y),
-                        r = d.radius + quad.point.radius + (d.cluster === quad.point.cluster ? padding : clusterPadding);
-                    if (l < r) {
-                        l = (l - r) / l * alpha;
-                        d.x -= x *= l;
-                        d.y -= y *= l;
-                        quad.point.x += x;
-                        quad.point.y += y;
-                    }
-                }
-                return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
-            });
-        };
-    }
+    force.start();
 
     var updateClusters = function() {
         var newCluster;
@@ -184,11 +151,10 @@ var drawClusters = function(colors) {
         svg.selectAll("circle")
             .data(nodes)
             .transition()
-            .duration(5000)
+            .duration(3000)
             .attr("r", function(d) {
                 return d.radius;
             });
-
     }
 
     var updateNodes = function() {
@@ -199,25 +165,34 @@ var drawClusters = function(colors) {
             var minD = null;
             clusters.forEach(function(cluster, index) {
                 var d = distance(cluster.rgb, node.rgb);
+                if(node == cluster) {
+                    console.log(["!!", d]);
+                }
                 if(!minD || d < minD) {
                     minD = d;
                     i = index;
                 }
             });
+            console.log([n, i, node.cluster == i]);
+
             node.cluster = i;
+
 
             if(n < nodes.length - 1) {
                 iter(n+1);
             }
+
         }
         iter(0);
+
+        force.start();
     }
 
     var iter = function() {
         updateClusters();
         setTimeout(function() {
             updateNodes();
-        }, 5000);
+        }, 3000);
     }
 
     document.querySelector('#iter').onclick = function() {
