@@ -4,9 +4,9 @@ Visualization demo for Colors Clustering using RGB &amp; K-means algorithm
 
 This is a demo & intro for https://github.com/zenozeng/colors-clustering.
 
-This demo was based on mbostock's Clustered Force Layout I
+This demo was based on mbostock's Multi-Foci Force Layout.
 
-http://bl.ocks.org/mbostock/1747543
+http://bl.ocks.org/mbostock/1021953
 
 Note for production usage:
 

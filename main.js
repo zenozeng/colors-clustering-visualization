@@ -31,8 +31,8 @@ var distance = function(a, b) {
 
 var drawClusters = function(colors) {
 
-    var width = 960,
-        height = 480,
+    var width = 600,
+        height = 600,
         radius = 5,
         clusterRadius = 15;
 
@@ -50,25 +50,44 @@ var drawClusters = function(colors) {
 
     var n = 4; // 10 clusters
     var clusters = new Array(n); // center for each cluster
-    var clusterColors = [
-        [255, 196, 178],
-        [56, 63, 11],
-        [204, 160, 168],
-        [111, 125, 16]
+    var seeds = [
+        colors[75],
+        colors[400],
+        colors[350],
+        colors[550]
     ];
+
+    d3.select("#seeds").append("svg")
+            .attr("width", width)
+            .attr("height", 48)
+        .selectAll("rect")
+        .data(seeds)
+        .enter()
+        .append("rect")
+        .attr("fill", function(d) {
+            return "rgb(" + d.join(',') + ")";
+        })
+        .attr("width", 48)
+        .attr("height", 48)
+        .attr("x", function(d, i) {
+            return 48 * i;
+        })
+        .attr("y", 0);
+    
+    
 
     var nodes = colors.map(function(rgb, index) {
         var i;
         var minD = null;
-        clusterColors.forEach(function(color, index) {
+        seeds.forEach(function(color, index) {
             var d = distance(color, rgb);
-            if(!minD || d < minD) {
+            if(minD == null || d < minD) {
                 minD = d;
                 i = index;
             }
         });
         var d = {cluster: i, radius: radius, color: "rgba("+rgb.join(',')+",1)", rgb: rgb};
-        if(minD < 270 && !clusters[i]) {
+        if(minD === 0 && !clusters[i]) {
             d.radius = clusterRadius;
             clusters[i] = d;
         }
@@ -113,7 +132,7 @@ var drawClusters = function(colors) {
     var updateClusters = function() {
         var newCluster;
         for(var i = 0; i < n; i++) {
-            // update cluster
+
             var _nodes = nodes.filter(function(node) {
                 return node.cluster == i;
             })
@@ -137,7 +156,7 @@ var drawClusters = function(colors) {
             var minD = null;
             _nodes.forEach(function(node) {
                 var d = distance(node.rgb, [r, g, b]);
-                if(!minD || d < minD) {
+                if(minD == null || d < minD) {
                     minD = d;
                     newCluster = node;
                 }
@@ -163,20 +182,18 @@ var drawClusters = function(colors) {
 
             var i;
             var minD = null;
+
+
             clusters.forEach(function(cluster, index) {
                 var d = distance(cluster.rgb, node.rgb);
-                if(node == cluster) {
-                    console.log(["!!", d]);
-                }
-                if(!minD || d < minD) {
+                if(minD == null || d < minD) {
                     minD = d;
                     i = index;
                 }
             });
-            console.log([n, i, node.cluster == i]);
+
 
             node.cluster = i;
-
 
             if(n < nodes.length - 1) {
                 iter(n+1);
@@ -207,7 +224,7 @@ img.src = "demo.jpg";
 img.onload = function() {
     var canvas = document.getElementById("canvas");
     var ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, img.width * 2, img.height * 2);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
     mosaic(ctx, canvas.width, canvas.height, 20, 20);
     var colors = readColors(ctx, canvas.width, canvas.height, 20, 20);
 
